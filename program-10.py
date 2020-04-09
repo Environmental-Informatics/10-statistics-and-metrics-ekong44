@@ -11,15 +11,26 @@
 """
 Edited by Eric Kong on April 7th, 2020.
 
+Description: Data is imported and stored as a dataframe. Functions are written
+            to calculate descriptive statistics and environmental metric of the data. 
+            Calculated results are outputted as CSV and TXT files. 
 
 References:
     https://stackoverflow.com/questions/48312655/replace-dataframe-column-negative-values-with-nan-in-method-chain?noredirect=1&lq=1
     https://towardsdatascience.com/using-the-pandas-resample-function-a231144194c4
+    https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#resampling
+    https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.apply.html
+    https://stackoverflow.com/questions/19914937/applying-function-with-multiple-arguments-to-create-a-new-pandas-column
+    https://kite.com/python/answers/how-to-apply-a-function-with-multiple-arguments-to-a-pandas-dataframe-in-python
 """
 
 import pandas as pd
 import scipy.stats as stats
 import numpy as np 
+
+# column headers for new dataframes
+annualcolumnheader = ['Mean Flow','Peak Flow','Median Flow','Coeff Var','Skew','Tqmean','R-B Index','7Q','3xMedian'];
+monthlycolumnheader = ['Mean Flow','Coeff Var','Tqmean','R-B Index'];
 
 def ReadData( fileName ):
     """This function takes a filename as input, and returns a dataframe with
@@ -43,10 +54,13 @@ def ReadData( fileName ):
     DataDF = DataDF.set_index('Date')
     
     # check for negative streamflow 
-    DataDF.loc[~(DataDF['Discharge'] > 0), 'Discharge']=np.nan
+    DataDF.loc[~(DataDF['Discharge'] > 0), 'Discharge'] = np.nan
     
-    # quantify the number of missing values
+    # quantify the number of missing and negative values
     MissingValues = DataDF["Discharge"].isna().sum()
+    
+    # remove invalid stream flow data values and remove negative values
+    DataDF = DataDF.dropna(subset=['Discharge'])
     
     return( DataDF, MissingValues )
 
@@ -70,9 +84,10 @@ def CalcTqmean(Qvalues):
        duration rather than the volume of streamflow. The routine returns
        the Tqmean value for the given data array."""
     
-    # Qvalues is the series of daily streamflow values 
-    # For that year, sum/count all the times daily flow is larger than the annual mean flow
-    # then divide by the # of days/data points to determine how often this happens
+    # Qvalues is the series of streamflow values 
+    # Count all the times flow is larger than the mean flow
+    # then divide by the # of data points to determine how often this happens
+    
     Tqmean = ((Qvalues > Qvalues.mean()).sum() / len(Qvalues))
     
     return ( Tqmean )
@@ -86,6 +101,8 @@ def CalcRBindex(Qvalues):
        (pathlength) by total discharge volumes for each year. The
        routine returns the RBindex value for the given data array."""
     
+    # Qvalues is the series of streamflow values
+        
     return ( RBindex )
 
 def Calc7Q(Qvalues):
@@ -94,8 +111,10 @@ def Calc7Q(Qvalues):
        filtering out the NoData values. The index is calculated by 
        computing a 7-day moving average for the annual dataset, and 
        picking the lowest average flow in any 7-day period during
-       that year.  The routine returns the 7Q (7-day low flow) value
+       that year. The routine returns the 7Q (7-day low flow) value
        for the given data array."""
+       
+    # Qvalues is the series of streamflow values
     
     return ( val7Q )
 
@@ -104,8 +123,13 @@ def CalcExceed3TimesMedian(Qvalues):
        than 3 times the annual median flow. The index is calculated by 
        computing the median flow from the given dataset (or using the value
        provided) and then counting the number of days with flow greater than 
-       3 times that value.   The routine returns the count of events greater 
+       3 times that value. The routine returns the count of events greater 
        than 3 times the median annual flow value for the given data array."""
+    
+    # Qvalues is the series of streamflow values
+    # Count all the times flow is larger than three times the median flow
+    # similar to Tqmean code 
+    median3x = (Qvalues > (Qvalues.median()*3)).sum()
     
     return ( median3x )
 
@@ -115,7 +139,23 @@ def GetAnnualStatistics(DataDF):
     annual values for each water year. Water year, as defined by the USGS,
     starts on October 1."""
     
-    colnames = ['Mean Flow','Peak Flow','Median Flow','Coeff Var','Skew','Tqmean','R-B Index','7Q','3xMedian']
+    annual_index = DataDF.resample('AS-OCT').mean() # resample index - yearly based on start of water year, October
+    WYDataDF = pd.DataFrame(index = annual_index.index, columns = annualcolumnheader) # setting new DF with proper index and headers
+    ADF = DataDF.resample('AS-OCT') # resampled DF stored as a simple variable name 
+    
+    # statistics 
+    WYDataDF['Mean Flow'] = ADF['Discharge'].mean()
+    WYDataDF['Peak Flow'] = ADF['Discharge'].max()
+    WYDataDF['Median Flow'] = ADF['Discharge'].median()
+    WYDataDF['Coeff Var'] = (ADF['Discharge'].std() / ADF['Discharge'].mean()) * 100
+    WYDataDF['Skew'] = ADF.apply({'Discharge':lambda x: stats.skew(x,bias=False)})
+    
+    # metrics
+    # applying the custom built functions
+    WYDataDF['Tqmean'] = ADF.apply({'Discharge':lambda x: CalcTqmean(x)})
+    WYDataDF['R-B Index'] = ADF.apply({'Discharge':lambda x: CalcRBindex(x)})
+    WYDataDF['7Q'] = ADF.apply({'Discharge':lambda x: Calc7Q(x)})
+    WYDataDF['3xMedian'] = ADF.apply({'Discharge':lambda x: CalcExceed3TimesMedian(x)})
     
     return ( WYDataDF )
 
@@ -124,23 +164,35 @@ def GetMonthlyStatistics(DataDF):
     for the given streamflow time series.  Values are returned as a dataframe
     of monthly values for each year."""
 
-    colnames = ['Mean Flow','Coeff Var','Tqmean','R-B Index']
+    monthly_index = DataDF.resample('M').mean() # resample index - monthly
+    MoDataDF = pd.DataFrame(index = monthly_index.index, columns = monthlycolumnheader) # setting new DF with proper index and headers
+    MDF = DataDF.resample('M') # resampled DF stored as a simple variable name 
+    
+    #metrics and statistics 
+    MoDataDF['Mean Flow'] = MDF['Discharge'].mean()
+    MoDataDF['Coeff Var'] = (MDF['Discharge'].std() / MDF['Discharge'].mean()) * 100
+    MoDataDF['Tqmean'] = MDF.apply({'Discharge':lambda x: CalcTqmean(x)})
+    MoDataDF['R-B Index'] = MDF.apply({'Discharge':lambda x: CalcRBindex(x)})
 
     return ( MoDataDF )
 
 def GetAnnualAverages(WYDataDF):
     """This function calculates annual average values for all statistics and
-    metrics.  The routine returns an array of mean values for each metric
+    metrics. The routine returns an array of mean values for each metric
     in the original dataframe."""
+    
+    # Annual average function should return a Series with a single average value for each statistic of metric
+    AnnualAverages = WYDataDF.mean(axis=0)
     
     return( AnnualAverages )
 
 def GetMonthlyAverages(MoDataDF):
     """This function calculates annual average monthly values for all 
-    statistics and metrics.  The routine returns an array of mean values 
+    statistics and metrics. The routine returns an array of mean values 
     for each metric in the original dataframe."""
     
-    colnames = ['Mean Flow','Coeff Var','Tqmean','R-B Index']
+    # Monthly average function should return a DataFrame with 12 monthly values for each metric
+    
     
     return( MonthlyAverages )
 
@@ -180,7 +232,7 @@ if __name__ == '__main__':
         # calculate descriptive statistics for each water year
         WYDataDF[file] = GetAnnualStatistics(DataDF[file])
         
-        # calcualte the annual average for each stistic or metric
+        # calculate the annual average for each stistic or metric
         AnnualAverages[file] = GetAnnualAverages(WYDataDF[file])
         
         print("-"*50, "\n\nSummary of water year metrics...\n\n", WYDataDF[file].describe(), "\n\nAnnual water year averages...\n\n", AnnualAverages[file])
@@ -193,3 +245,17 @@ if __name__ == '__main__':
         
         print("-"*50, "\n\nSummary of monthly metrics...\n\n", MoDataDF[file].describe(), "\n\nAnnual Monthly Averages...\n\n", MonthlyAverages[file])
         
+        
+################################ Outputting Results to files ###############################################################
+
+# annual metrics CSV
+.to_csv('Annual_Metrics.csv', sep=",")            
+        
+# monthly metric CSV
+.to_csv('Monthly_Metrics.csv', sep=",")         
+        
+# avg annual metrics TAB
+.to_csv('Average_Annual_Metrics.txt', sep="\t")        
+        
+# avg monthly metric TAB
+.to_csv('Average_Monthly_Metrics.txt', sep="\t")        
