@@ -114,7 +114,7 @@ def CalcRBindex(Qvalues):
             storage = storage + abs(Qvalues.iloc[position-1] - Qvalues.iloc[position]) # abs value of day-to-day change  
         RBindex = storage / sum(Qvalues) # summed day-to-day changes divided by sum of flow         
     else: 
-            RBindex = np.nan    # combatting the divide by zero error that occurs because of the nan values    
+        RBindex = np.nan    # combatting the divide by zero error that occurs because of the nan values    
     return ( RBindex )
 
 def Calc7Q(Qvalues):
