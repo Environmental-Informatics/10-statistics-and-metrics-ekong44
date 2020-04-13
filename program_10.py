@@ -110,7 +110,7 @@ def CalcRBindex(Qvalues):
     remove_nan = len(Qvalues.dropna())
     if remove_nan > 0:   # run if the length of the flow values, after nan's are removed is greater than 0
         for position in range(1, remove_nan): # loop for all values
-            z = z + abs(Qvalues.iloc[position-1] - Qvalues.iloc[position]) # abs value of day-to-day change  
+            z = z + abs(Qvalues.dropna().iloc[position-1] - Qvalues.dropna().iloc[position]) # abs value of day-to-day change  
         RBindex = z / sum(Qvalues.dropna()) # summed day-to-day changes divided by sum of flow         
     else: 
             RBindex = np.nan    # combatting the divide by zero error that occurs because of the nan values    
