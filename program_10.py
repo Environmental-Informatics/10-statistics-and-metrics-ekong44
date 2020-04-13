@@ -22,6 +22,8 @@ References:
     https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.apply.html
     https://stackoverflow.com/questions/19914937/applying-function-with-multiple-arguments-to-create-a-new-pandas-column
     https://kite.com/python/answers/how-to-apply-a-function-with-multiple-arguments-to-a-pandas-dataframe-in-python
+    https://stackoverflow.com/questions/17071871/how-to-select-rows-from-a-dataframe-based-on-column-values
+    https://stackoverflow.com/questions/26105804/extract-month-from-date-in-python/26105888
 """
 
 import pandas as pd
@@ -60,7 +62,7 @@ def ReadData( fileName ):
     MissingValues = DataDF["Discharge"].isna().sum()
     
     # remove invalid stream flow data values and remove negative values
-    DataDF = DataDF.dropna(subset=['Discharge'])
+    #DataDF = DataDF.dropna(subset=['Discharge'])
     
     return( DataDF, MissingValues )
 
@@ -102,6 +104,12 @@ def CalcRBindex(Qvalues):
        routine returns the RBindex value for the given data array."""
     
     # Qvalues is the series of streamflow values
+    storage = 0 # initalized as zero, this variable stores the value from  
+                # the previous day-to-day change calulation so it can be added during the summation
+           
+    for position in range(1, len(Qvalues)): # loop for all values
+        storage = storage + abs(Qvalues.iloc[position-1] - Qvalues.iloc[position]) # abs value of day-to-day change
+    RBindex = storage / sum(Qvalues) # summed day-to-day changes divided by sum of flow 
         
     return ( RBindex )
 
@@ -115,6 +123,9 @@ def Calc7Q(Qvalues):
        for the given data array."""
        
     # Qvalues is the series of streamflow values
+    # calculate average of the weekly flow data for a given period
+    # set val7Q to the lowest value 
+    val7Q =  Qvalues.rolling(window=7).mean().min()
     
     return ( val7Q )
 
@@ -128,7 +139,7 @@ def CalcExceed3TimesMedian(Qvalues):
     
     # Qvalues is the series of streamflow values
     # Count all the times flow is larger than three times the median flow
-    # similar to Tqmean code 
+    # similar layout to Tqmean code 
     median3x = (Qvalues > (Qvalues.median()*3)).sum()
     
     return ( median3x )
@@ -192,7 +203,8 @@ def GetMonthlyAverages(MoDataDF):
     for each metric in the original dataframe."""
     
     # Monthly average function should return a DataFrame with 12 monthly values for each metric
-    
+    isolated_months = MoDataDF.index.month # tip for extracting month from Cherkauer
+    MonthlyAverages = MoDataDF.groupby(isolated_months).mean() # group the new DF using the months and find the mean of that data
     
     return( MonthlyAverages )
 
@@ -246,16 +258,35 @@ if __name__ == '__main__':
         print("-"*50, "\n\nSummary of monthly metrics...\n\n", MoDataDF[file].describe(), "\n\nAnnual Monthly Averages...\n\n", MonthlyAverages[file])
         
         
-################################ Outputting Results to files ###############################################################
+################################ Outputting Results to files, indented so it rules for both files########################################################
+# script will keep adding data to the same text file if run multiple times 
 
-# annual metrics CSV
-.to_csv('Annual_Metrics.csv', sep=",")            
+# annual metrics CSV - WYDataDF
+        WYDataDF[file].insert(0, 'Station', file)
+        WYDataDF[file].to_csv('Annual_Metrics.csv', mode='a', sep=",") # append
+     
+# monthly metric CSV - MoDataDF
+        MoDataDF[file].insert(0, 'Station', file)
+        MoDataDF[file].to_csv('Monthly_Metrics.csv', mode='a', sep=",")         
         
-# monthly metric CSV
-.to_csv('Monthly_Metrics.csv', sep=",")         
         
-# avg annual metrics TAB
-.to_csv('Average_Annual_Metrics.txt', sep="\t")        
+# avg monthly metric TAB - MonthlyAverages
+        MonthlyAverages[file].insert(0, 'Station', file)
+        MonthlyAverages[file].to_csv('Average_Monthly_Metrics.txt', mode='a', sep="\t") 
         
-# avg monthly metric TAB
-.to_csv('Average_Monthly_Metrics.txt', sep="\t")        
+# avg annual metrics TAB - AnnualAverages
+# AnnualAverages is a dictionary of series 
+strip_wildcat = AnnualAverages['Wildcat'].to_frame() # convert the stripped dictionary entry to DF
+strip_tippe = AnnualAverages['Tippe'].to_frame()
+
+repeat_tippe = ['Tippe']*9 # list of station name
+repeat_wildcat = ['Wildcat']*9
+
+strip_tippe['Station'] = repeat_tippe # adding station name to stripped DF
+strip_wildcat['Station'] = repeat_wildcat
+
+combined = [strip_wildcat, strip_tippe] # combine DF's
+endgame = pd.concat(combined) 
+
+endgame.to_csv('Average_Annual_Metrics.txt', mode='a', sep="\t") 
+        
