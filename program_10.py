@@ -276,17 +276,17 @@ if __name__ == '__main__':
         
 # avg annual metrics TAB - AnnualAverages
 # AnnualAverages is a dictionary of series 
-strip_wildcat = AnnualAverages['Wildcat'].to_frame() # convert the stripped dictionary entry to DF
-strip_tippe = AnnualAverages['Tippe'].to_frame()
+    strip_wildcat = AnnualAverages['Wildcat'].to_frame() # convert the stripped dictionary entry to DF
+    strip_tippe = AnnualAverages['Tippe'].to_frame()
 
-repeat_tippe = ['Tippe']*9 # list of station name
-repeat_wildcat = ['Wildcat']*9
+    repeat_tippe = ['Tippe']*9 # list of station name
+    repeat_wildcat = ['Wildcat']*9
 
-strip_tippe['Station'] = repeat_tippe # adding station name to stripped DF
-strip_wildcat['Station'] = repeat_wildcat
+    strip_tippe['Station'] = repeat_tippe # adding station name to stripped DF
+    strip_wildcat['Station'] = repeat_wildcat
 
-combined = [strip_wildcat, strip_tippe] # combine DF's
-endgame = pd.concat(combined) 
+    combined = [strip_wildcat, strip_tippe] # combine DF's
+    endgame = pd.concat(combined) 
 
-endgame.to_csv('Average_Annual_Metrics.txt', mode='a', sep="\t") 
+    endgame.to_csv('Average_Annual_Metrics.txt', mode='a', sep="\t") 
         
