@@ -175,9 +175,9 @@ def GetMonthlyStatistics(DataDF):
     for the given streamflow time series.  Values are returned as a dataframe
     of monthly values for each year."""
 
-    monthly_index = DataDF.resample('M').mean() # resample index - monthly
+    monthly_index = DataDF.resample('MS').mean() # resample index - monthly
     MoDataDF = pd.DataFrame(index = monthly_index.index, columns = monthlycolumnheader) # setting new DF with proper index and headers
-    MDF = DataDF.resample('M') # resampled DF stored as a simple variable name 
+    MDF = DataDF.resample('MS') # resampled DF stored as a simple variable name 
     
     #metrics and statistics 
     MoDataDF['Mean Flow'] = MDF['Discharge'].mean()

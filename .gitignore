@@ -1,63 +1,11 @@
-# Windows image file caches
-Thumbs.db
-ehthumbs.db
+--2020-04-13 13:22:27--  https://raw.githubusercontent.com/Environmental-Informatics/assignment-10/master/README.md
+Resolving raw.githubusercontent.com (raw.githubusercontent.com)... 151.101.128.133, 151.101.192.133, 151.101.64.133, ...
+Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|151.101.128.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 20170 (20K) [text/plain]
+Saving to: ‘README.md.1’
 
-# Folder config file
-Desktop.ini
+     0K .......... .........                                  100% 3.47M=0.006s
 
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
-
-# Windows Installer files
-*.cab
-*.msi
-*.msm
-*.msp
-
-# Windows shortcuts
-*.lnk
-
-# dreamweaver lock files
-*.lck
-*.LCK
-
-# =========================
-# Operating System Files
-# =========================
-
-# OSX
-# =========================
-
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Thumbnails
-._*
-
-# Files that might appear in the root of a volume
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-
-# Directories potentially created on remote AFP share
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
-
-# Temporary Linux files that should not be included
-*.[oa]
-*~
-.*
-
-# ignore files in the Depreciated directory
-Depreciated/
-
-# make sure gitigrnoe file is included in the repository
-!.gitignore
+2020-04-13 13:22:27 (3.47 MB/s) - ‘README.md.1’ saved [20170/20170]
 
