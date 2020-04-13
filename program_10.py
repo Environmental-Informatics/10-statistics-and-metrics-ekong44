@@ -104,7 +104,7 @@ def CalcRBindex(Qvalues):
        routine returns the RBindex value for the given data array."""
     
     # Qvalues is the series of streamflow values
-    storage = 0 # initalized as zero, this variable stores the value from  
+    storage = int(0) # initalized as zero, this variable stores the value from  
                 # the previous day-to-day change calulation so it can be added during the summation
     
     remove_nan = len(Qvalues.dropna())
