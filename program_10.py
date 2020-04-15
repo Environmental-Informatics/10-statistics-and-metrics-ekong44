@@ -106,18 +106,18 @@ def CalcRBindex(Qvalues):
     # Qvalues is the series of streamflow values
     storage = 0 # initalized as zero, this variable stores the value from  
                 # the previous day-to-day change calulation so it can be added during the summation
-                
-    total_flow = 0
     
-    remove_nan = len(Qvalues.dropna())
-    if remove_nan > 0:   # run if the length of the flow values, after nan's are removed is greater than 0
-        for position in range(1, remove_nan): # loop for all values
-            Qvalues = Qvalues.dropna()
+    if len(Qvalues.dropna()) > 0:   # run if the length of the flow values, after nan's are removed is greater than 0
+        Qvalues = Qvalues.dropna()
+        
+        for position in range(1, len(Qvalues.dropna())): # loop for all values
             storage = storage + abs(Qvalues.iloc[position-1] - Qvalues.iloc[position]) # abs value of day-to-day change  
-            total_flow = sum(Qvalues)
-        RBindex = storage / total_flow # summed day-to-day changes divided by sum of flow         
+            total_flow = sum(Qvalues.dropna())
+        RBindex = storage / total_flow # summed day-to-day changes divided by sum of flow 
+        
     else: 
         RBindex = np.nan    # combatting the divide by zero error that occurs because of the nan values    
+        
     return ( RBindex )
 
 def Calc7Q(Qvalues):
