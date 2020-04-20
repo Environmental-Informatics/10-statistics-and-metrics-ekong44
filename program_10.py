@@ -112,7 +112,7 @@ def CalcRBindex(Qvalues):
         
         for position in range(1, len(Qvalues.dropna())): # loop for all values
             storage = storage + abs(Qvalues.iloc[position-1] - Qvalues.iloc[position]) # abs value of day-to-day change  
-            total_flow = sum(Qvalues.dropna())
+            total_flow = Qvalues.dropna().sum()
         RBindex = storage / total_flow # summed day-to-day changes divided by sum of flow 
         
     else: 
