@@ -266,15 +266,15 @@ if __name__ == '__main__':
         
         
 ################################ Outputting Results to files, indented so it rules for both files########################################################
-# script will keep adding data to the same text file if run multiple times 
 
+# script will keep adding data to the same text file if run multiple times 
 # annual metrics CSV - WYDataDF
         WYDataDF[file].insert(0, 'Station', file)
-        WYDataDF[file].to_csv('Annual_Metrics.csv', mode='a', sep=",") # append
+        #WYDataDF[file].to_csv('Annual_Metrics.csv', mode='a', sep=",") # append
      
 # monthly metric CSV - MoDataDF
         MoDataDF[file].insert(0, 'Station', file)
-        MoDataDF[file].to_csv('Monthly_Metrics.csv', mode='a', sep=",")         
+        #MoDataDF[file].to_csv('Monthly_Metrics.csv', mode='a', sep=",")         
         
         
 # avg monthly metric TAB - MonthlyAverages
@@ -296,4 +296,19 @@ if __name__ == '__main__':
     endgame = pd.concat(combined) 
 
     endgame.to_csv('Average_Annual_Metrics.txt', mode='a', sep="\t") 
+    
+######################### strip WYDataDF and MODataDF, concatenate, then to CSV #####################
+    
+    WY_t = WYDataDF['Tippe']
+    WY_w = WYDataDF['Wildcat']
+    WY_combined = [WY_t, WY_w]
+    WY_end = pd.concat(WY_combined)
+    WY_end.to_csv('Annual_Metrics.csv', sep=",")
+    
+    
+    Mo_t = MoDataDF['Tippe']
+    Mo_w = MoDataDF['Wildcat']
+    Mo_combined = [Mo_t, Mo_w]
+    Mo_end = pd.concat(Mo_combined)
+    Mo_end.to_csv('Monthly_Metrics.csv', sep=",")
         
